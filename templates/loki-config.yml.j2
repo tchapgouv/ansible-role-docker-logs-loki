@@ -1,0 +1,104 @@
+# https://raw.githubusercontent.com/grafana/loki/v2.6.1/cmd/loki/loki-local-config.yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  #grpc_listen_port: 9096
+
+common:
+  path_prefix: /tmp/loki
+  replication_factor: 1
+  ring:
+    instance_addr: 0.0.0.0
+    kvstore:
+      store: inmemory
+
+ingester:
+  lifecycler:
+    address: 0.0.0.0
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+  chunk_idle_period: 5m
+  chunk_retain_period: 30s
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: aws
+      schema: v11
+      index:
+        prefix: loki_index_
+        period: 24h
+
+storage_config:
+  aws:
+    bucketnames: "{{ logs_s3_buckets | join(', ') }}"
+    endpoint: "{{ logs_s3_endpoint }}"
+    region: "{{ logs_s3_region }}"
+    access_key_id: "{{ logs_s3_key_id }}"
+    secret_access_key: "{{ logs_s3_secret }}"
+    insecure: false
+    sse_encryption: false
+    http_config:
+      idle_conn_timeout: 90s
+      response_header_timeout: 0s
+      #insecure_skip_verify: false
+      insecure_skip_verify: {{ logs_s3_insecure_skip_verify }}
+    s3forcepathstyle: true
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    shared_store: s3
+    cache_location: /loki/boltdb-cache
+
+compactor:
+  working_directory: /loki/boltdb-shipper-compactor
+  shared_store: aws
+
+limits_config:
+  enforce_metric_name: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 48h
+  ingestion_rate_mb: 8
+
+# ruler:
+#   alertmanager_url: http://localhost:9093
+#   storage:
+#     type: s3
+#     s3:
+#       bucketnames: "{{ logs_s3_buckets | join(', ') }}"
+#       endpoint: "{{ logs_s3_endpoint }}"
+#       region: "{{ logs_s3_region }}"
+#       access_key_id: "{{ logs_s3_key_id }}"
+#       secret_access_key: "{{ logs_s3_secret }}"
+#       insecure: false
+#       sse_encryption: false
+#       http_config:
+#         idle_conn_timeout: 90s
+#         response_header_timeout: 0s
+#         insecure_skip_verify: false
+#       s3forcepathstyle: true
+#   notification_timeout: 1m
+#   rule_path: /tmp/scratch
+#   ring:
+#     instance_addr: 127.0.0.1
+#     kvstore:
+#       store: inmemory
+#   enable_api: true
+
+
+# By default, Loki will send anonymous, but uniquely-identifiable usage and configuration
+# analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/
+#
+# Statistics help us better understand how Loki is used, and they show us performance
+# levels for most users. This helps us prioritize features and documentation.
+# For more information on what's sent, look at
+# https://github.com/grafana/loki/blob/main/pkg/usagestats/stats.go
+# Refer to the buildReport method to see what goes into a report.
+#
+# If you would like to disable reporting, uncomment the following lines:
+analytics:
+  reporting_enabled: false

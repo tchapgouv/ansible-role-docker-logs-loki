@@ -1,0 +1,84 @@
+---
+- name: Create config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ logs_loki_conf_dir }}"
+    - "{{ logs_loki_data_dir }}"
+
+- name: Env file creation
+  copy:
+    dest: "{{ logs_loki_conf_dir }}/{{ item.key }}"
+    content: |
+       {% for key, value in item.value.items() %}
+       {{ key|trim }}={{ value|trim }}
+       {% endfor %}
+    mode: 0400
+    owner: root
+    group: root
+  with_dict: "{{ logs_loki_compose_vars }}"
+  notify:
+    - "restart logs-loki"
+
+- name: Config dir creation
+  file:
+    path: "{{ logs_loki_conf_dir }}/{{ item.value|dirname }}"
+    state: directory
+  notify:
+    - "restart logs-loki"
+  with_dict:
+     loki-config.yml.j2: "loki/local-config.yaml"
+#     promtail-config.yml.j2: "promtail/config.yml"
+
+- name: Config file creation
+  template:
+    src: "{{ item.key}}"
+    dest: "{{ logs_loki_conf_dir }}/{{ item.value }}"
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - "restart logs-loki"
+  with_dict:
+     loki-config.yml.j2: "loki/local-config.yml"
+#     promtail-config.yml.j2: "promtail/config.yml"
+
+- name: Docker-compose file creation
+  template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ logs_loki_conf_dir }}/docker-compose.yml"
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - "restart logs-loki"
+  tags:
+    - update-compose
+
+- name: Service file creation
+  template:
+    src: "{{ logs_loki_service_name }}.service.j2"
+    dest: "/etc/systemd/system/{{ logs_loki_service_name }}.service"
+    mode: 0644
+    owner: root
+    group: root
+  register: logs_loki_kibana_systemd_service_result
+  notify:
+    - "restart logs-loki"
+
+- name: Pull image service
+  shell: docker-compose pull
+  args:
+    chdir: "{{ logs_loki_conf_dir }}"
+    executable: /bin/bash
+  notify:
+    - "restart logs-loki"
+
+- name: Systemd service activation
+  service:
+    name: "{{ logs_loki_service_name }}.service"
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: "logs_loki_kibana_systemd_service_result.changed"

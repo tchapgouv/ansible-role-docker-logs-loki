@@ -1,0 +1,25 @@
+---
+- name: Check systemd service
+  stat:
+    path: "/etc/systemd/system/{{ logs_loki_service_name }}.service"
+  register: logs_loki_service_systemd_result
+
+- name: Systemd service desactivation
+  service:
+    name: "{{ logs_loki_service_name }}.service"
+    enabled: no
+    state: stopped
+    daemon_reload: yes
+  when: "logs_loki_service_systemd_result.stat.exists|bool"
+
+- meta: flush_handlers
+
+- name: Create config dir
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etc/systemd/system/{{ logs_loki_service_name }}.service"
+    - "{{ logs_loki_data_dir }}"
+    - "{{ logs_loki_conf_dir }}"
+    - "{{ logs_loki_conf_dir }}/.env"

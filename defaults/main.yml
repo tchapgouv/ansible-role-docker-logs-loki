@@ -1,0 +1,30 @@
+---
+logs_loki_service_name: logs-loki
+logs_loki_conf_dir: /opt/logs-loki
+logs_loki_data_dir: /opt/logs-loki/data
+logs_loki_compose_vars:
+  ".env": "{{ logs_loki_service_vars }}"
+
+# declare here all env variables that must be overrided in docker-compose
+logs_loki_service_vars:  # {}
+  DOCKER_GRAFANA_LOKI_VERSION: "{{ logs_loki_grafana_loki_version }}"
+  DOCKER_GRAFANA_PROMTAIL_VERSION: "{{ logs_loki_grafana_promtail_version }}"
+  DOCKER_GRAFANA_VERSION: "{{ logs_loki_grafana_version }}"
+  DOCKER_GRAFANA_LISTEN_HOST: "{{ logs_loki_grafana_listen_host }}"
+  DOCKER_PROMTAIL_SYSLOG_LISTEN_HOST: "{{ logs_loki_promtail_syslog_listen_host }}"
+  DOCKER_PROMTAIL_SYSLOG_LISTEN_PORT: "{{ logs_loki_promtail_syslog_listen_port }}"
+  DOCKER_LOKI_FRONTEND_REPLICAS: "{{ logs_loki_loki_frontend_replicas }}"
+  DOCKER_LOKI_READ_REPLICAS: "{{ logs_loki_loki_read_replicas }}"
+  DOCKER_LOKI_WRITE_REPLICAS: "{{ logs_loki_loki_write_replicas }}"
+
+logs_loki_grafana_loki_version: 2.6.1
+logs_loki_grafana_promtail_version: 2.6.1
+logs_loki_grafana_version: latest
+
+logs_loki_loki_frontend_replicas: 1
+logs_loki_loki_read_replicas: 1
+logs_loki_loki_write_replicas: 1
+
+logs_loki_grafana_listen_host: 127.0.0.1
+logs_loki_promtail_syslog_listen_host: 0.0.0.0
+logs_loki_promtail_syslog_listen_port: 514

@@ -1,0 +1,61 @@
+---
+#
+# simple docker-compose logs stack based on:
+#   loki
+#
+version: "3.8"
+
+services:
+  loki:
+    image: grafana/loki:${DOCKER_GRAFANA_LOKI_VERSION:-2.6.1}
+    ports:
+      - "3100:3100"
+    volumes:
+      - "./loki/local-config.yml:/etc/loki/local-config.yaml:ro"
+    command: [ '-config.file=/etc/loki/local-config.yaml', '-config.expand-env=true' ]
+    # dns & network_mode are a workaround compose weird DNS. Required to resolve S3 bucket domain
+    dns:
+      - {{internal_ip}}
+    network_mode: "bridge"
+
+##########################
+# multi container setup with dedicated read and write container
+#  waiting for https://github.com/grafana/loki/pull/6551 to be merged/released
+#
+
+#   loki-frontend:
+#     image: grafana/loki:${DOCKER_GRAFANA_LOKI_VERSION:-2.6.1}
+#     ports:
+#       - "3100:3100"
+#     volumes:
+#       - "./loki/local-config.yml:/etc/loki/local-config.yaml:ro"
+#     command: [ '-config.file=/etc/loki/local-config.yaml', '-config.expand-env=true', '-target=query-frontend', '-frontend.downstream-url=http://loki-read:3100' ]
+#     networks:
+#       - loki
+#     deploy:
+#       mode: replicated
+#       replicas: ${DOCKER_LOKI_FRONTEND_REPLICAS:-1}
+# 
+#   loki-write:
+#     image: grafana/loki:${DOCKER_GRAFANA_LOKI_VERSION:-2.6.1}
+#     restart: always
+#     volumes:
+#       - "./loki/local-config.yml:/etc/loki/local-config.yaml:ro"
+#     command: [ '-config.file=/etc/loki/local-config.yaml', '-config.expand-env=true', '-target=write' ]
+#     networks:
+#       - loki
+#     deploy:
+#       mode: replicated
+#       replicas: ${DOCKER_LOKI_WRITE_REPLICAS:-1}
+# 
+#   loki-read:
+#     image: grafana/loki:${DOCKER_GRAFANA_LOKI_VERSION:-2.6.1}
+#     restart: always
+#     volumes:
+#       - "./loki/local-config.yml:/etc/loki/local-config.yaml:ro"
+#     command: [ '-config.file=/etc/loki/local-config.yaml', '-config.expand-env=true', '-target=read' ]
+#     networks:
+#       - loki
+#     deploy:
+#       mode: replicated
+#       replicas: ${DOCKER_LOKI_READ_REPLICAS:-1}

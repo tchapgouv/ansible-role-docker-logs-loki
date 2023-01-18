@@ -1,0 +1,25 @@
+#jinja2: lstrip_blocks: "True"
+[Unit]
+Description={{ logs_loki_service_name }}
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+WorkingDirectory={{ logs_loki_conf_dir }}
+Environment=NAME=%N
+
+ExecStartPre=-/bin/bash -c '/usr/local/bin/docker-compose down || :'
+ExecStartPre=-/bin/bash -c '/usr/local/bin/docker-compose pull || :'
+
+ExecStart=/usr/local/bin/docker-compose up -d --remove-orphans
+ExecStop=/bin/bash -c '/usr/local/bin/docker-compose down'
+
+#Restart=always
+RestartSec=30
+SyslogIdentifier=%N
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

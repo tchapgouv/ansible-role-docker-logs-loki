@@ -1,0 +1,21 @@
+---
+# handlers for ansible-role-docker-logs-loki
+- name: restart logs-loki
+  service:
+    name: "{{ logs_loki_service_name }}"
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: start logs-loki
+  service:
+    name: "{{ logs_loki_service_name }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: reload logs-loki
+  service:
+    name: "{{ logs_loki_service_name }}"
+    state: reloaded
+    enabled: yes

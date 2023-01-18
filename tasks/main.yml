@@ -1,0 +1,9 @@
+---
+- import_tasks: "{{ role_path }}/tasks/install.yml"
+  tags:
+    - setup-logs-loki-install
+
+- import_tasks: "{{ role_path }}/tasks/uninstall.yml"
+  tags:
+    - never
+    - setup-logs-loki-uninstall
